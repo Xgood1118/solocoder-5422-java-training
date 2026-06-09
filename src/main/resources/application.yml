@@ -1,0 +1,22 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: training-management
+
+training:
+  company-gps:
+    latitude: 39.9042
+    longitude: 116.4074
+    radius-meters: 200
+  exam:
+    pass-score: 80
+    max-retries: 1
+  annual-hours:
+    management: 40
+    rnd: 60
+    sales: 80
+    min-external-hours: 20
+  qr-code:
+    valid-minutes: 5
