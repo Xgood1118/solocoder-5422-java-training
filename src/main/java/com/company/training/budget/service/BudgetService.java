@@ -231,8 +231,14 @@ public class BudgetService {
             budgetRepository.save(budget);
         }
 
-        BudgetUsageRecord usageRecord = existing != null ? existing : new BudgetUsageRecord();
-        usageRecord.setId(UUID.randomUUID().toString());
+        BudgetUsageRecord usageRecord;
+        if (existing != null) {
+            usageRecord = existing;
+        } else {
+            usageRecord = new BudgetUsageRecord();
+            usageRecord.setId(UUID.randomUUID().toString());
+            usageRecord.setCreatedAt(LocalDateTime.now());
+        }
         usageRecord.setDepartmentId(course.getDepartmentId());
         usageRecord.setCourseId(courseId);
         usageRecord.setEstimatedCost(costPerPerson.multiply(BigDecimal.valueOf(enrolledCount)));
@@ -244,7 +250,6 @@ public class BudgetService {
         usageRecord.setAbsentCount(absentCount);
         usageRecord.setSettled(true);
         usageRecord.setSettledAt(LocalDateTime.now());
-        usageRecord.setCreatedAt(existing != null ? existing.getCreatedAt() : LocalDateTime.now());
 
         return usageRepository.save(usageRecord);
     }

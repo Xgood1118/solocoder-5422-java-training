@@ -31,7 +31,7 @@ public class CourseService {
         if (course.getWaitlistCapacity() == null) {
             course.setWaitlistCapacity(course.getCapacity());
         }
-        if (course.getRequiresExam() && course.getCreditHours() == null) {
+        if (course.isRequiresExam() && course.getCreditHours() == null) {
             course.setCreditHours(0.0);
         }
         return courseRepository.save(course);
