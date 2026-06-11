@@ -106,6 +106,11 @@ public class ExamService {
             throw new IllegalStateException("已达到最大考试次数限制");
         }
 
+        ExamAttempt unfinished = examAttemptRepository.findUnfinishedAttempt(examId, employeeId);
+        if (unfinished != null) {
+            throw new IllegalStateException("您有未提交的考试，请先完成或提交后再开始");
+        }
+
         ExamAttempt latest = examAttemptRepository.findLatestAttempt(examId, employeeId);
         if (latest != null && latest.getResult() == ExamResult.PASSED) {
             throw new IllegalStateException("您已通过该考试，无需重复考试");

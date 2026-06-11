@@ -1,11 +1,17 @@
 package com.company.training.record.service;
 
+import com.company.training.attendance.entity.AttendanceRecord;
+import com.company.training.attendance.service.AttendanceService;
 import com.company.training.common.config.TrainingProperties;
 import com.company.training.common.enums.*;
 import com.company.training.course.entity.Course;
 import com.company.training.course.service.CourseService;
 import com.company.training.employee.entity.Employee;
 import com.company.training.employee.service.EmployeeService;
+import com.company.training.enrollment.entity.Enrollment;
+import com.company.training.enrollment.service.EnrollmentService;
+import com.company.training.exam.entity.ExamAttempt;
+import com.company.training.exam.service.ExamService;
 import com.company.training.record.entity.AnnualHoursSummary;
 import com.company.training.record.entity.TrainingRecord;
 import com.company.training.record.repository.TrainingRecordRepository;
@@ -24,10 +30,12 @@ public class TrainingRecordService {
     private final TrainingRecordRepository recordRepository;
     private final CourseService courseService;
     private final EmployeeService employeeService;
+    private final AttendanceService attendanceService;
+    private final ExamService examService;
+    private final EnrollmentService enrollmentService;
     private final TrainingProperties trainingProperties;
 
-    public TrainingRecord generateRecord(String courseId, String employeeId,
-                                          boolean signedIn, Integer examScore, boolean examPassed) {
+    public TrainingRecord generateRecord(String courseId, String employeeId) {
         Course course = courseService.getCourse(courseId);
         if (course == null) {
             throw new IllegalArgumentException("课程不存在: " + courseId);
@@ -43,10 +51,34 @@ public class TrainingRecordService {
             return existing;
         }
 
-        boolean passed = !course.isRequiresExam() || examPassed;
-        if (!signedIn) {
-            passed = false;
+        Enrollment enrollment = enrollmentService.getEnrollmentByCourseAndEmployee(courseId, employeeId);
+        if (enrollment == null || enrollment.getStatus() != EnrollmentStatus.ENROLLED) {
+            throw new IllegalStateException("员工未报名或未成功报名此课程");
         }
+
+        AttendanceRecord attendance = attendanceService.getByCourseAndEmployee(courseId, employeeId);
+        if (attendance == null || attendance.getStatus() != AttendanceStatus.SIGNED_IN) {
+            throw new IllegalStateException("员工未完成签到，无法生成培训记录");
+        }
+
+        boolean examPassed = true;
+        Integer examScore = null;
+        String examAttemptId = null;
+        if (course.isRequiresExam()) {
+            List<ExamAttempt> attempts = examService.getAttemptsByCourseAndEmployee(courseId, employeeId);
+            ExamAttempt passedAttempt = attempts.stream()
+                    .filter(a -> a.getResult() == ExamResult.PASSED)
+                    .findFirst()
+                    .orElse(null);
+            if (passedAttempt == null) {
+                throw new IllegalStateException("员工未通过该课程考试，无法生成培训记录");
+            }
+            examPassed = true;
+            examScore = passedAttempt.getScore();
+            examAttemptId = passedAttempt.getId();
+        }
+
+        boolean passed = examPassed;
 
         TrainingRecord record = new TrainingRecord();
         record.setId(UUID.randomUUID().toString());
@@ -55,6 +87,9 @@ public class TrainingRecordService {
         record.setCourseName(course.getName());
         record.setCourseType(course.getCourseType());
         record.setDepartmentId(employee.getDepartmentId());
+        record.setEnrollmentId(enrollment.getId());
+        record.setAttendanceId(attendance.getId());
+        record.setExamAttemptId(examAttemptId);
         record.setCreditHours(passed && course.getCreditHours() != null ? course.getCreditHours() : 0.0);
         record.setExamScore(examScore);
         record.setPassed(passed);

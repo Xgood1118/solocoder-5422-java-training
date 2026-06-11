@@ -22,5 +22,5 @@ public class ExamAttempt {
     private Map<String, String> answers;
     private LocalDateTime startTime;
     private LocalDateTime submitTime;
-    private boolean isRetake;
+    private boolean retake;
 }

@@ -1,5 +1,6 @@
 package com.company.training.exam.repository;
 
+import com.company.training.common.enums.ExamResult;
 import com.company.training.exam.entity.ExamAttempt;
 import org.springframework.stereotype.Repository;
 
@@ -59,6 +60,7 @@ public class ExamAttemptRepository {
     public int countAttempts(String examId, String employeeId) {
         return (int) storage.values().stream()
                 .filter(a -> examId.equals(a.getExamId()) && employeeId.equals(a.getEmployeeId()))
+                .filter(a -> a.getResult() != null && a.getResult() != ExamResult.NOT_TAKEN)
                 .count();
     }
 
@@ -66,6 +68,14 @@ public class ExamAttemptRepository {
         return storage.values().stream()
                 .filter(a -> examId.equals(a.getExamId()) && employeeId.equals(a.getEmployeeId()))
                 .max(Comparator.comparingInt(ExamAttempt::getAttemptNumber))
+                .orElse(null);
+    }
+
+    public ExamAttempt findUnfinishedAttempt(String examId, String employeeId) {
+        return storage.values().stream()
+                .filter(a -> examId.equals(a.getExamId()) && employeeId.equals(a.getEmployeeId()))
+                .filter(a -> a.getResult() == ExamResult.NOT_TAKEN)
+                .findFirst()
                 .orElse(null);
     }
 

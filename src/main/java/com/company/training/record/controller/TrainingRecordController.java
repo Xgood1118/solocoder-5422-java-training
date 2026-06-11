@@ -18,17 +18,14 @@ public class TrainingRecordController {
     private final TrainingRecordService recordService;
 
     @PostMapping("/generate")
-    public ApiResponse<TrainingRecord> generateRecord(@RequestBody Map<String, Object> request) {
+    public ApiResponse<TrainingRecord> generateRecord(@RequestBody Map<String, String> request) {
         try {
-            String courseId = (String) request.get("courseId");
-            String employeeId = (String) request.get("employeeId");
-            Boolean signedIn = (Boolean) request.getOrDefault("signedIn", true);
-            Integer examScore = request.get("examScore") != null ? ((Number) request.get("examScore")).intValue() : null;
-            Boolean examPassed = (Boolean) request.getOrDefault("examPassed", false);
+            String courseId = request.get("courseId");
+            String employeeId = request.get("employeeId");
             return ApiResponse.success(
-                    recordService.generateRecord(courseId, employeeId, signedIn, examScore, examPassed)
+                    recordService.generateRecord(courseId, employeeId)
             );
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             return ApiResponse.error(400, e.getMessage());
         }
     }
